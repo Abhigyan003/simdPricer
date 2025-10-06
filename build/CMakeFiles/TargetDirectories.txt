@@ -1,3 +1,0 @@
-/home/abhi8803/simdPricer/build/CMakeFiles/simd_pricer.dir
-/home/abhi8803/simdPricer/build/CMakeFiles/edit_cache.dir
-/home/abhi8803/simdPricer/build/CMakeFiles/rebuild_cache.dir
