@@ -1,47 +1,19 @@
-#include "utils.h"
-#include<immintrin.h>
-#include<iostream>
-#include<iomanip>
+#include <immintrin.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdint.h>
 #include <inttypes.h> // For PRId64
 
-double normal_cdf(double value)
-{
-	return 0.5 * std::erfc(-value * M_SQRT1_2);
-}
-
-// std :: ostream& operator<<(std :: ostream& out, __m256i x){
-// 	long long result[4];
-//     _mm256_storeu_epi64(result, x);
-    
-//     out << "[" << result[0] << ", " << result[1] << ", " 
-//         << result[2] << ", " << result[3] << "]";
-//     return out;
-// };
-
-// std :: ostream& operator<<(std :: ostream& out, __m256d x){
-//     double result[4];
-//     _mm256_storeu_pd(result, x);
-    
-//     out << "[" << result[0] << ", " << result[1] << ", " 
-//         << result[2] << ", " << result[3] << "]";
-//     return out;
-// };
-
-
-__m256d log_avx(__m256d x){
-	// constants 
-	    
+__m256d log_pd_avx2(__m256d x) {
+    // STEP 1: DEFINE CONSTANTS FOR DOUBLE PRECISION
+    // ==============================================
     const __m256d one = _mm256_set1_pd(1.0);
     const __m256d half = _mm256_set1_pd(0.5);
+    const __m256d log2_const = _mm256_set1_pd(0.693147180559945309417);
     
-    // ln(2) with full double precision
-    const __m256d log2_const = _mm256_set1_pd(0.693147180559945309417232121458176568);
-    
-    // sqrt(2)/2 with full double precision
-    const __m256d sqrt2_half = _mm256_set1_pd(0.707106781186547524400844362104849039);
-
     // POLYNOMIAL COEFFICIENTS (12 terms, minimax optimized for double precision)
     // For P(z) = (log(1+z) - z) / z^2
+    // ========================================================================
     const __m256d p0  = _mm256_set1_pd(-0.50000000000000000000);
     const __m256d p1  = _mm256_set1_pd(0.33333333333332931888);
     const __m256d p2  = _mm256_set1_pd(-0.24999999999732151675);
@@ -55,49 +27,51 @@ __m256d log_avx(__m256d x){
     const __m256d p10 = _mm256_set1_pd(-0.08333332768783457174);
     const __m256d p11 = _mm256_set1_pd(0.07692307694389229853);
 
-	// x = 2^E * M
-	// x = 2^(E+0.5) * (M / sqrt(2))
-	// -0.396 <= ln (M / sqrt(2)) < 0.396
+    // STEP 2: EXTRACT EXPONENT
+    // =====================================
+    __m256i x_int = _mm256_castpd_si256(x);
+    __m256i exp_i = _mm256_srli_epi64(x_int, 52);
+    exp_i = _mm256_and_si256(exp_i, _mm256_set1_epi64x(0x7FF));
+    __m256i exp_unbiased = _mm256_sub_epi64(exp_i, _mm256_set1_epi64x(1023));
 
-	__m256i x_int = _mm256_castpd_si256(x);
-	__m256i shifted = _mm256_srli_epi64(x_int, 52);
-	__m256i biasedExp = _mm256_and_si256(shifted, _mm256_set1_epi64x(0x7FF));
-	__m256i exp = _mm256_sub_epi64(biasedExp, _mm256_set1_epi64x(1023));
-
-	// NICE int_64 to double conversion
-
-	// we want the lower 32 bit out of each of the 64 bits of the oprignal numbers
-	// so shuffle, this treats the input as 8 sets of 32 bits
-	// now at the end we have all the lower 32-bits for the 4 int64_t essentially
-
+    // Convert 64-bit integer exponent to double using SIMD
+    // Create a shuffle mask to select the low 32 bits of each 64-bit lane.
+    // The source register has 8 x 32-bit lanes: [7, 6, 5, 4, 3, 2, 1, 0].
+    // We want to gather lanes 0, 2, 4, and 6 into the bottom half of a new register.
     const __m256i permute_mask = _mm256_set_epi32(0, 0, 0, 0, 6, 4, 2, 0);
-    __m256i packed_lanes = _mm256_permutevar8x32_epi32(exp, permute_mask);
+
+    // Apply the mask to permute the 32-bit lanes across the register.
+    __m256i packed_lanes = _mm256_permutevar8x32_epi32(exp_unbiased, permute_mask);
     
-	// treat __m256i as __m128i (ignore the first 128 bits)
+    // The low 128 bits of packed_lanes now hold our 4 desired int32 values.
+    // Cast the 256-bit vector to a 128-bit one to isolate them.
     __m128i exp_packed = _mm256_castsi256_si128(packed_lanes);
 
     // Convert the packed 32-bit integers to doubles.
     __m256d exp_f = _mm256_cvtepi32_pd(exp_packed);
+    
+    // STEP 3: EXTRACT AND NORMALIZE MANTISSA
+    // =======================================
+    // Get mantissa m in [1.0, 2.0) by forcing the exponent to 0 (biased 1023)
+    const __m256d mant_mask_nosign = _mm256_castsi256_pd(_mm256_set1_epi64x(0x000FFFFFFFFFFFFFULL));
+    const __m256d exponent_one   = _mm256_castsi256_pd(_mm256_set1_epi64x(0x3FF0000000000000LL));
+    __m256d m = _mm256_or_pd(_mm256_and_pd(x, mant_mask_nosign), exponent_one);
+    
+    // STEP 4: RANGE REDUCTION
+    // ========================
+    const __m256d sqrt2 = _mm256_set1_pd(1.4142135623730951);
+    __m256d mask = _mm256_cmp_pd(m, sqrt2, _CMP_GT_OQ);
 
-	// Mantissa
-	const __m256d mMask = _mm256_castsi256_pd(_mm256_set1_epi64x(0x000FFFFFFFFFFFFFULL));
-	__m256d mantissa = _mm256_and_pd(x, mMask);
-	// mantissa obtained, now setting exp to 1023 
-	const __m256d exponent_one   = _mm256_castsi256_pd(_mm256_set1_epi64x(0x3FF0000000000000LL));
-	mantissa = _mm256_or_pd(mantissa, exponent_one);
-
-	// mantissa range reduction because 
-	const __m256d sqrt2 = _mm256_set1_pd(1.4142135623730951);
-    __m256d mask = _mm256_cmp_pd(mantissa, sqrt2, _CMP_GT_OQ);
     // If m > sqrt(2), then m_adj = m/2 and exp_adj = exp+1
     // Otherwise, m_adj = m and exp_adj = exp
-	// choose a or b based on the mask
-    __m256d mant_adjusted = _mm256_blendv_pd(mantissa, _mm256_mul_pd(mantissa, half), mask);
+    __m256d mant_adjusted = _mm256_blendv_pd(m, _mm256_mul_pd(m, half), mask);
     exp_f = _mm256_blendv_pd(exp_f, _mm256_add_pd(exp_f, one), mask);
 
-	// approximate polynomial
+    // STEP 5: COMPUTE ln(mantissa) WITH MINIMAX POLYNOMIAL
+    // =======================================================
     __m256d z = _mm256_sub_pd(mant_adjusted, one);
     __m256d z2 = _mm256_mul_pd(z, z);
+    
     // HORNER'S METHOD to evaluate P(z)
     __m256d poly = p11;
     poly = _mm256_fmadd_pd(poly, z, p10);
@@ -115,9 +89,12 @@ __m256d log_avx(__m256d x){
     // Reconstruct the final approximation from P(z): log(1+z) ≈ z + z^2 * P(z)
     poly = _mm256_fmadd_pd(poly, z2, z);
 
+    // STEP 6: COMBINE RESULTS
+    // =======================
     __m256d result = _mm256_fmadd_pd(exp_f, log2_const, poly);
     
-
+    // STEP 7: HANDLE SPECIAL CASES
+    // =============================
     __m256d zero = _mm256_setzero_pd();
     __m256d inf = _mm256_castsi256_pd(_mm256_set1_epi64x(0x7FF0000000000000LL));
     __m256d nan = _mm256_castsi256_pd(_mm256_set1_epi64x(0x7FF8000000000000LL));
@@ -137,12 +114,24 @@ __m256d log_avx(__m256d x){
     return result;
 }
 
+// Log base 10 for doubles
+__m256d log10_pd_avx2(__m256d x) {
+    const __m256d log10_e = _mm256_set1_pd(0.43429448190325182765);
+    return _mm256_mul_pd(log_pd_avx2(x), log10_e);
+}
+
+// Log base 2 for doubles
+__m256d log2_pd_avx2(__m256d x) {
+    const __m256d log2_e = _mm256_set1_pd(1.4426950408889634073);
+    return _mm256_mul_pd(log_pd_avx2(x), log2_e);
+}
+
 void test_log_avx2_double() {
     double inputs[4] = {0.5, M_E, 10.0, 100.0};
     double results[4];
     
     __m256d x = _mm256_loadu_pd(inputs);
-    __m256d y = log_avx(x);
+    __m256d y = log_pd_avx2(x);
     _mm256_storeu_pd(results, y);
     
     printf("AVX2 log(x) DOUBLE PRECISION results:\n");
@@ -189,7 +178,7 @@ void test_log_avx2_double() {
         }
         
         __m256d x_test = _mm256_loadu_pd(test_vals);
-        __m256d y_test = log_avx(x_test);
+        __m256d y_test = log_pd_avx2(x_test);
         _mm256_storeu_pd(results, y_test);
         
         for (int i = 0; i < 4; i++) {
@@ -206,7 +195,7 @@ void test_log_avx2_double() {
     printf("\nSpecial cases:\n");
     double special[4] = {0.0, -1.0, INFINITY, NAN};
     __m256d x_special = _mm256_loadu_pd(special);
-    __m256d y_special = log_avx(x_special);
+    __m256d y_special = log_pd_avx2(x_special);
     _mm256_storeu_pd(results, y_special);
     
     const char* names[4] = {"0.0", "-1.0", "+inf", "NaN"};

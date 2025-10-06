@@ -1,0 +1,5 @@
+#ignore everything in build
+build/
+
+#ignore everything ending in .out (all executables created)
+.vscode

@@ -73,43 +73,43 @@ CMakeFiles/simd_pricer.dir/src/main.cpp.o: CMakeFiles/simd_pricer.dir/flags.make
 CMakeFiles/simd_pricer.dir/src/main.cpp.o: ../src/main.cpp
 CMakeFiles/simd_pricer.dir/src/main.cpp.o: CMakeFiles/simd_pricer.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/abhi8803/simdPricer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/simd_pricer.dir/src/main.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/simd_pricer.dir/src/main.cpp.o -MF CMakeFiles/simd_pricer.dir/src/main.cpp.o.d -o CMakeFiles/simd_pricer.dir/src/main.cpp.o -c /home/abhi8803/simdPricer/src/main.cpp
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/simd_pricer.dir/src/main.cpp.o -MF CMakeFiles/simd_pricer.dir/src/main.cpp.o.d -o CMakeFiles/simd_pricer.dir/src/main.cpp.o -c /home/abhi8803/simdPricer/src/main.cpp
 
 CMakeFiles/simd_pricer.dir/src/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/simd_pricer.dir/src/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abhi8803/simdPricer/src/main.cpp > CMakeFiles/simd_pricer.dir/src/main.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abhi8803/simdPricer/src/main.cpp > CMakeFiles/simd_pricer.dir/src/main.cpp.i
 
 CMakeFiles/simd_pricer.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/simd_pricer.dir/src/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abhi8803/simdPricer/src/main.cpp -o CMakeFiles/simd_pricer.dir/src/main.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abhi8803/simdPricer/src/main.cpp -o CMakeFiles/simd_pricer.dir/src/main.cpp.s
 
 CMakeFiles/simd_pricer.dir/src/pricer.cpp.o: CMakeFiles/simd_pricer.dir/flags.make
 CMakeFiles/simd_pricer.dir/src/pricer.cpp.o: ../src/pricer.cpp
 CMakeFiles/simd_pricer.dir/src/pricer.cpp.o: CMakeFiles/simd_pricer.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/abhi8803/simdPricer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/simd_pricer.dir/src/pricer.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/simd_pricer.dir/src/pricer.cpp.o -MF CMakeFiles/simd_pricer.dir/src/pricer.cpp.o.d -o CMakeFiles/simd_pricer.dir/src/pricer.cpp.o -c /home/abhi8803/simdPricer/src/pricer.cpp
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/simd_pricer.dir/src/pricer.cpp.o -MF CMakeFiles/simd_pricer.dir/src/pricer.cpp.o.d -o CMakeFiles/simd_pricer.dir/src/pricer.cpp.o -c /home/abhi8803/simdPricer/src/pricer.cpp
 
 CMakeFiles/simd_pricer.dir/src/pricer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/simd_pricer.dir/src/pricer.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abhi8803/simdPricer/src/pricer.cpp > CMakeFiles/simd_pricer.dir/src/pricer.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abhi8803/simdPricer/src/pricer.cpp > CMakeFiles/simd_pricer.dir/src/pricer.cpp.i
 
 CMakeFiles/simd_pricer.dir/src/pricer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/simd_pricer.dir/src/pricer.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abhi8803/simdPricer/src/pricer.cpp -o CMakeFiles/simd_pricer.dir/src/pricer.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abhi8803/simdPricer/src/pricer.cpp -o CMakeFiles/simd_pricer.dir/src/pricer.cpp.s
 
 CMakeFiles/simd_pricer.dir/src/utils.cpp.o: CMakeFiles/simd_pricer.dir/flags.make
 CMakeFiles/simd_pricer.dir/src/utils.cpp.o: ../src/utils.cpp
 CMakeFiles/simd_pricer.dir/src/utils.cpp.o: CMakeFiles/simd_pricer.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/abhi8803/simdPricer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/simd_pricer.dir/src/utils.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/simd_pricer.dir/src/utils.cpp.o -MF CMakeFiles/simd_pricer.dir/src/utils.cpp.o.d -o CMakeFiles/simd_pricer.dir/src/utils.cpp.o -c /home/abhi8803/simdPricer/src/utils.cpp
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/simd_pricer.dir/src/utils.cpp.o -MF CMakeFiles/simd_pricer.dir/src/utils.cpp.o.d -o CMakeFiles/simd_pricer.dir/src/utils.cpp.o -c /home/abhi8803/simdPricer/src/utils.cpp
 
 CMakeFiles/simd_pricer.dir/src/utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/simd_pricer.dir/src/utils.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abhi8803/simdPricer/src/utils.cpp > CMakeFiles/simd_pricer.dir/src/utils.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/abhi8803/simdPricer/src/utils.cpp > CMakeFiles/simd_pricer.dir/src/utils.cpp.i
 
 CMakeFiles/simd_pricer.dir/src/utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/simd_pricer.dir/src/utils.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abhi8803/simdPricer/src/utils.cpp -o CMakeFiles/simd_pricer.dir/src/utils.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/abhi8803/simdPricer/src/utils.cpp -o CMakeFiles/simd_pricer.dir/src/utils.cpp.s
 
 # Object files for target simd_pricer
 simd_pricer_OBJECTS = \
