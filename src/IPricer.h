@@ -5,7 +5,7 @@
 
 class IPricer{
 	public:
-		virtual vector<double> price_all(
+		virtual std :: vector<double> price_all(
 			const std :: vector<double>& spotPrices, 
 			const std :: vector<double>& strikePrices,
 			const std :: vector<double>& expirations,

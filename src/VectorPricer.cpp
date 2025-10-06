@@ -12,10 +12,10 @@ std :: vector<double> VectorPricer :: price_all(
 	const std :: vector<double>& expirations,
 	const std :: vector<double>& riskFreeRates,
 	const std :: vector<double>& volatilities,
-	const std :: vector<uint8_t>& is_call,
+	const std :: vector<uint8_t>& is_call
 	) 
 {
-	vector<double>results;
+	std :: vector<double>results;
 	size_t numberOptions = spotPrices.size();
 	for(int i=0;i+3<numberOptions;i+=4){
 		__m256d spotPriceV = _mm256_loadu_pd(&spotPrices[i]);

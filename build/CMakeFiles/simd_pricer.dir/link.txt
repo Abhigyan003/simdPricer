@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/simd_pricer.dir/src/main.cpp.o CMakeFiles/simd_pricer.dir/src/pricer.cpp.o CMakeFiles/simd_pricer.dir/src/utils.cpp.o -o simd_pricer 
+/usr/bin/g++ -g CMakeFiles/simd_pricer.dir/src/main.cpp.o CMakeFiles/simd_pricer.dir/src/pricer.cpp.o CMakeFiles/simd_pricer.dir/src/utils.cpp.o -o simd_pricer 
