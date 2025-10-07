@@ -1,8 +1,9 @@
-#include "utils.h"
+#include "include/utils.h"
 #include<immintrin.h>
 #include<iostream>
 #include<iomanip>
 #include <inttypes.h> // For PRId64
+#include<vector>
 
 double normal_cdf(double value)
 {
@@ -137,85 +138,49 @@ __m256d log_avx(__m256d x){
     return result;
 }
 
-void test_log_avx2_double() {
-    double inputs[4] = {0.5, M_E, 10.0, 100.0};
-    double results[4];
-    
-    __m256d x = _mm256_loadu_pd(inputs);
-    __m256d y = log_avx(x);
-    _mm256_storeu_pd(results, y);
-    
-    printf("AVX2 log(x) DOUBLE PRECISION results:\n");
-    printf("%-15s %-25s %-25s %-15s %-12s\n", 
-           "Input", "AVX2 Result", "Reference", "Error", "ULP Error");
-    printf("------------------------------------------------------------------------------------------\n");
-    
-    for (int i = 0; i < 4; i++) {
-        double reference = log(inputs[i]);
-        double error = fabs(results[i] - reference);
-        
-        union { double d; int64_t i; } ref_u = {reference};
-        union { double d; int64_t i; } res_u = {results[i]};
-        int64_t ulp_error = llabs(ref_u.i - res_u.i);
-        
-        printf("%-15.10f %-25.17f %-25.17f %-15.2e %-12" PRId64 "\n", 
-               inputs[i], results[i], reference, error, ulp_error);
-    }
-    
-    printf("\nExtensive testing:\n");
-    double test_vals[4];
-    for (int batch = 0; batch < 5; batch++) {
-        switch(batch) {
-            case 0: 
-                test_vals[0] = 0.1; test_vals[1] = 1.0; 
-                test_vals[2] = 2.0; test_vals[3] = 7.389;
-                break;
-            case 1:
-                test_vals[0] = 1e-10; test_vals[1] = 1e-5;
-                test_vals[2] = 1e5; test_vals[3] = 1e10;
-                break;
-            case 2:
-                test_vals[0] = 0.707; test_vals[1] = 1.414;
-                test_vals[2] = 0.5; test_vals[3] = 2.0;
-                break;
-            case 3:
-                test_vals[0] = M_PI; test_vals[1] = M_E * M_E;
-                test_vals[2] = sqrt(2.0); test_vals[3] = 1.0 / M_E;
-                break;
-            case 4:
-                test_vals[0] = 1.0 + 1e-15; test_vals[1] = 1.0 - 1e-15;
-                test_vals[2] = 2.0 - 1e-15; test_vals[3] = 2.0 + 1e-15;
-                break;
-        }
-        
-        __m256d x_test = _mm256_loadu_pd(test_vals);
-        __m256d y_test = log_avx(x_test);
-        _mm256_storeu_pd(results, y_test);
-        
-        for (int i = 0; i < 4; i++) {
-            double ref = log(test_vals[i]);
-            double err = fabs(results[i] - ref);
-            union { double d; int64_t i; } ref_u = {ref};
-            union { double d; int64_t i; } res_u = {results[i]};
-            int64_t ulp = llabs(ref_u.i - res_u.i);
-            printf("log(%13.6e) = %20.15f (ref: %20.15f) ULP: %3" PRId64 "\n",
-                   test_vals[i], results[i], ref, ulp);
-        }
-    }
-    
-    printf("\nSpecial cases:\n");
-    double special[4] = {0.0, -1.0, INFINITY, NAN};
-    __m256d x_special = _mm256_loadu_pd(special);
-    __m256d y_special = log_avx(x_special);
-    _mm256_storeu_pd(results, y_special);
-    
-    const char* names[4] = {"0.0", "-1.0", "+inf", "NaN"};
-    for (int i = 0; i < 4; i++) {
-        printf("log(%6s) = %20.15f\n", names[i], results[i]);
-    }
-}
+__m256d exp_avx(__m256d x){
 
-int main() {
-    test_log_avx2_double();
-    return 0;
+    const __m256d log2_e = _mm256_set1_pd(1.4426950408889634); // log2(e)
+    const __m256d A      = _mm256_set1_pd(1LL << 52);         // 2^52, the shift factor
+    const __m256d B      = _mm256_set1_pd(1023.0);            // IEEE 754 bias
+    // x = x * log2(e)
+    x = _mm256_mul_pd(x, log2_e);
+    __m256d xf = _mm256_sub_pd(x, _mm256_floor_pd(x));
+
+    // Your coefficients for K_n(xf) = 1 + xf - 2^xf
+    const __m256d p0 = _mm256_set1_pd(8.96880707e-9);
+    const __m256d p1 = _mm256_set1_pd(3.06852825e-1);
+    const __m256d p2 = _mm256_set1_pd(-2.40226805e-1);
+    const __m256d p3 = _mm256_set1_pd(-5.55041739e-2);
+    const __m256d p4 = _mm256_set1_pd(-9.61658346e-3);
+    const __m256d p5 = _mm256_set1_pd(-1.33314802e-3);
+    const __m256d p6 = _mm256_set1_pd(-1.56598145e-4);
+    const __m256d p7 = _mm256_set1_pd(-1.55032043e-5);
+
+    // Evaluate the polynomial K_n(xf) using Horner's method
+    __m256d poly = p7;
+    poly = _mm256_fmadd_pd(poly, xf, p6);
+    poly = _mm256_fmadd_pd(poly, xf, p5);
+    poly = _mm256_fmadd_pd(poly, xf, p4);
+    poly = _mm256_fmadd_pd(poly, xf, p3);
+    poly = _mm256_fmadd_pd(poly, xf, p2);
+    poly = _mm256_fmadd_pd(poly, xf, p1);
+    poly = _mm256_fmadd_pd(poly, xf, p0);
+
+    // Step 3: x = x - K_n(xf)
+    x = _mm256_sub_pd(x, poly);
+    
+    __m256d i_double = _mm256_fmadd_pd(A, x, _mm256_mul_pd(A, B));
+
+    alignas(32) double temp_d[4];
+    alignas(32) long long temp_ll[4];
+    _mm256_store_pd(temp_d, i_double);
+    for(int i = 0; i < 4; ++i) {
+        temp_ll[i] = (long long)temp_d[i];
+    }
+    __m256i i_long = _mm256_load_si256((__m256i*)temp_ll);
+
+    __m256d result = _mm256_castsi256_pd(i_long);
+
+    return result;
 }

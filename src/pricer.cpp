@@ -1,5 +1,5 @@
-#include "pricer.h"
-#include "utils.h"
+#include "include/pricer.h"
+#include "include/utils.h"
 #include <cmath>
 
 double black_scholes_price(double S, double K, double T, double r, double v, bool is_call){
