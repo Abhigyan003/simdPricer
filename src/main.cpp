@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include "pricer.h"
+#include "include/pricer.h"
 
 int main(){
 	constexpr double S = 100.0;
