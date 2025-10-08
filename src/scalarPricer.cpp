@@ -10,7 +10,7 @@ const std :: vector<double>& volatilities,
 const std :: vector<long long>& is_call
 )
 {
-    size_t numberOptions = strikePrices.size();
+    int numberOptions = strikePrices.size();
     std::vector<double>results(numberOptions);
     for(int i=0;i<numberOptions;i++){
         results[i] = black_scholes_price(spotPrices[i], strikePrices[i], expirations[i], riskFreeRates[i], volatilities[i], is_call[i]);
