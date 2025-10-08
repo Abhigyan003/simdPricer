@@ -39,9 +39,6 @@ __m256d log_avx(__m256d x){
     
     // ln(2) with full double precision
     const __m256d log2_const = setPD(0.693147180559945309417232121458176568);
-    
-    // sqrt(2)/2 with full double precision
-    const __m256d sqrt2_half = setPD(0.707106781186547524400844362104849039);
 
     // POLYNOMIAL COEFFICIENTS (12 terms, minimax optimized for double precision)
     // For P(z) = (log(1+z) - z) / z^2
