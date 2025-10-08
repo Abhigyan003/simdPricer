@@ -1,6 +1,7 @@
 # AI generated, reference from https://dkenefake.github.io/blog/Optimal_Poly
 
 import numpy
+import math
 
 def chev_points(n):
     """
@@ -59,7 +60,7 @@ def concave_max(f, low, high):
 
 def func(x):
     """The target function for approximation."""
-    return 1 + x - 2 ** x
+    return math.erfc(x)
 
 def remez(func, n_degree):
     """
