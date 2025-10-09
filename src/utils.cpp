@@ -120,11 +120,16 @@ __m256d log_avx(__m256d x){
 
     __m256d zero = _mm256_setzero_pd();
     __m256d inf = _mm256_castsi256_pd(_mm256_set1_epi64x(0x7FF0000000000000LL));
+    __m256d neg_inf = _mm256_castsi256_pd(_mm256_set1_epi64x(0xFFF0000000000000LL));
     __m256d nan = _mm256_castsi256_pd(_mm256_set1_epi64x(0x7FF8000000000000LL));
     
-    // x <= 0 -> NaN
-    __m256d invalid_mask = _mm256_cmp_pd(x, zero, _CMP_LE_OQ);
-    result = _mm256_blendv_pd(result, nan, invalid_mask);
+    // x < 0 -> NaN
+    __m256d neg_mask = _mm256_cmp_pd(x, zero, _CMP_LT_OQ);
+    result = _mm256_blendv_pd(result, nan, neg_mask);
+
+    // x == 0 -> -inf
+    __m256d zero_mask = _mm256_cmp_pd(x, zero, _CMP_EQ_OQ);
+    result = _mm256_blendv_pd(result, neg_inf, zero_mask);
     
     // x == inf -> inf
     __m256d inf_mask = _mm256_cmp_pd(x, inf, _CMP_EQ_OQ);
@@ -142,9 +147,11 @@ __m256d exp_avx(__m256d x){
     const __m256d log2_e = setPD(1.4426950408889634); // log2(e)
     const __m256d A      = setPD(1LL << 52);         // 2^52, the shift factor
     const __m256d B      = setPD(1023.0);            // IEEE 754 bias
+    const __m256d one    = setPD(1);
     // x = x * log2(e)
     x = _mm256_mul_pd(x, log2_e);
-    __m256d xf = _mm256_sub_pd(x, _mm256_floor_pd(x));
+    __m256d x_i = _mm256_floor_pd(x);
+    __m256d xf = _mm256_sub_pd(x, x_i);
 
     // Your coefficients for K_n(xf) = 1 + xf - 2^xf
     const __m256d p0 = setPD(8.96880707e-9);
@@ -166,18 +173,24 @@ __m256d exp_avx(__m256d x){
     poly = _mm256_fmadd_pd(poly, xf, p1);
     poly = _mm256_fmadd_pd(poly, xf, p0);
 
-    // Step 3: x = x - K_n(xf)
+    //x = x - K_n(xf)
+
     x = _mm256_sub_pd(x, poly);
+
+    // now we have out answer hidden in x, the exponent part is xi and fractional part is xf (our mantissa)
     
     __m256d i_double = _mm256_fmadd_pd(A, x, _mm256_mul_pd(A, B));
+    // // avx-512 method
+    __m256i i_long = _mm256_cvtpd_epi64(i_double);
 
-    alignas(32) double temp_d[4];
-    alignas(32) long long temp_ll[4];
-    _mm256_store_pd(temp_d, i_double);
-    for(int i = 0; i < 4; ++i) {
-        temp_ll[i] = (long long)temp_d[i];
-    }
-    __m256i i_long = _mm256_load_si256((__m256i*)temp_ll);
+    //  step by step conversion
+    // alignas(32) double temp_d[4];
+    // alignas(32) long long temp_ll[4];
+    // _mm256_store_pd(temp_d, i_double);
+    // for(int i = 0; i < 4; ++i) {
+    //     temp_ll[i] = (long long)temp_d[i];
+    // }
+    // __m256i i_long = _mm256_load_si256((__m256i*)temp_ll);
 
     __m256d result = _mm256_castsi256_pd(i_long);
 
@@ -198,9 +211,12 @@ __m256d erfc_avx(__m256d x){
     __m256d t = _mm256_div_pd(one, _mm256_add_pd(one, px));
     __m256d s = setPD(0);
 
-    for(int i=4;i>=0;i--){
-        s = _mm256_mul_pd(t, _mm256_add_pd(s, a[i]));
-    }
+    s = _mm256_mul_pd(t, _mm256_add_pd(s, a[4]));
+    s = _mm256_mul_pd(t, _mm256_add_pd(s, a[3]));
+    s = _mm256_mul_pd(t, _mm256_add_pd(s, a[2]));
+    s = _mm256_mul_pd(t, _mm256_add_pd(s, a[1]));
+    s = _mm256_mul_pd(t, _mm256_add_pd(s, a[0]));
+
     __m256d x_sqared = _mm256_mul_pd(x, x);
     s = _mm256_mul_pd(s, exp_avx(-x_sqared));
     s = _mm256_blendv_pd(two - s, s, mask);
@@ -214,8 +230,4 @@ __m256d normal_cdf_avx(__m256d x){
     __m256d invSQRT2 = setPD(M_SQRT1_2);
 
     return _mm256_mul_pd(half, erfc_avx(_mm256_mul_pd(-x, invSQRT2)));
-}
-
-double normal_cdf_scalar(double x) {
-    return 0.5 * std::erfc(-x / std::sqrt(2.0));
 }

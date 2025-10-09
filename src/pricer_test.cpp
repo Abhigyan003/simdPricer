@@ -6,6 +6,7 @@
 #include "include/scalarPricer.h"
 #include "include/vectorPricer.h"
 #include "include/utils.h"
+#include "include/benchmark.h"
 
 // Function to generate random data for testing
 void generate_random_data(
@@ -39,28 +40,32 @@ void generate_random_data(
 }
 
 int main() {
-    size_t data_size = 100000000;
+    size_t data_size = 10000000;
     std::vector<double> spotPrices, strikePrices, expirations, riskFreeRates, volatilities;
     std::vector<long long> is_call;
 
     generate_random_data(spotPrices, strikePrices, expirations, riskFreeRates, volatilities, is_call, data_size);
 
+    Benchmark benchmark = Benchmark();
     ScalarPricer scalar_pricer;
     VectorPricer vector_pricer;
+    
+    std::vector<double> scalar_prices, vector_prices;
+    BenchmarkResult scalar = benchmark.run([&]() -> void {
+            scalar_prices = scalar_pricer.price_all(spotPrices, strikePrices, expirations, riskFreeRates, volatilities, is_call);
+        }
+    );
 
-    auto start_scalar = std::chrono::high_resolution_clock::now();
-    std::vector<double> scalar_prices = scalar_pricer.price_all(spotPrices, strikePrices, expirations, riskFreeRates, volatilities, is_call);
-    auto end_scalar = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> scalar_time = end_scalar - start_scalar;
-
-    auto start_vector = std::chrono::high_resolution_clock::now();
-    std::vector<double> vector_prices = vector_pricer.price_all(spotPrices, strikePrices, expirations, riskFreeRates, volatilities, is_call);
-    auto end_vector = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> vector_time = end_vector - start_vector;
+    BenchmarkResult vector = benchmark.run([&]() -> void {
+            vector_prices = vector_pricer.price_all(spotPrices, strikePrices, expirations, riskFreeRates, volatilities, is_call);
+        }
+    );
 
     double max_diff = 0.0;
+    double max_relative_diff = 0.0;
     for (size_t i = 0; i < data_size; ++i) {
         double diff = std::abs(scalar_prices[i] - vector_prices[i]);
+        max_relative_diff = std::max(max_relative_diff, diff / scalar_prices[i]);
         if (diff > max_diff) {
             max_diff = diff;
         }
@@ -68,9 +73,10 @@ int main() {
 
     std::cout << "Data size: " << data_size << std::endl;
     std::cout << "Max difference between scalar and vector pricers: " << max_diff << std::endl;
-    std::cout << "Scalar pricer execution time: " << scalar_time.count() << " seconds" << std::endl;
-    std::cout << "Vector pricer execution time: " << vector_time.count() << " seconds" << std::endl;
-    std::cout << "Time difference (scalar - vector): " << scalar_time.count() - vector_time.count() << " seconds" << std::endl;
+    std::cout << "Max relative difference between scalar and vector pricers: " << max_relative_diff << std::endl;
+    std::cout << "Scalar pricer execution time: " << scalar.duration_ms << " ms" << std::endl;
+    std::cout << "Vector pricer execution time: " << vector.duration_ms << " ms" << std::endl;
+    std::cout << "Time difference (scalar - vector): " << scalar.duration_ms  / vector.duration_ms << " times improvement" << std::endl;
 
     return 0;
 }
