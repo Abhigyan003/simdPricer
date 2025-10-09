@@ -65,7 +65,7 @@ __m256d log_avx(__m256d x){
 	__m256i exp = _mm256_sub_epi64(biasedExp, _mm256_set1_epi64x(1023));
 
     #ifdef __AVX512DQ__
-        exp_f = _mm256_cvtepi64_pd(exp);
+        __m256d exp_f = _mm256_cvtepi64_pd(exp);
     #else
 	// NICE int_64 to double conversion
 
