@@ -12,23 +12,23 @@ double normal_cdf(double value)
 	return 0.5 * std::erfc(-value * M_SQRT1_2);
 }
 
-// std :: ostream& operator<<(std :: ostream& out, __m256i x){
-// 	long long result[4];
-//     _mm256_storeu_epi64(result, x);
+std :: ostream& operator<<(std :: ostream& out, __m256i x){
+	alignas(32) long long result[4];
+    _mm256_store_si256((__m256i*)result, x);
     
-//     out << "[" << result[0] << ", " << result[1] << ", " 
-//         << result[2] << ", " << result[3] << "]";
-//     return out;
-// };
+    out << "[" << result[0] << ", " << result[1] << ", " 
+        << result[2] << ", " << result[3] << "]";
+    return out;
+};
 
-// std :: ostream& operator<<(std :: ostream& out, __m256d x){
-//     double result[4];
-//     _mm256_storeu_pd(result, x);
+std :: ostream& operator<<(std :: ostream& out, __m256d x){
+    alignas(32) double result[4];
+    _mm256_store_pd(result, x);
     
-//     out << "[" << result[0] << ", " << result[1] << ", " 
-//         << result[2] << ", " << result[3] << "]";
-//     return out;
-// };
+    out << "[" << result[0] << ", " << result[1] << ", " 
+        << result[2] << ", " << result[3] << "]";
+    return out;
+};
 
 
 __m256d log_avx(__m256d x){
@@ -64,6 +64,9 @@ __m256d log_avx(__m256d x){
 	__m256i biasedExp = _mm256_and_si256(shifted, _mm256_set1_epi64x(0x7FF));
 	__m256i exp = _mm256_sub_epi64(biasedExp, _mm256_set1_epi64x(1023));
 
+    #ifdef __AVX512DQ__
+        exp_f = _mm256_cvtepi64_pd(exp);
+    #else
 	// NICE int_64 to double conversion
 
 	// we want the lower 32 bit out of each of the 64 bits of the oprignal numbers
@@ -78,6 +81,7 @@ __m256d log_avx(__m256d x){
 
     // Convert the packed 32-bit integers to doubles.
     __m256d exp_f = _mm256_cvtepi32_pd(exp_packed);
+    #endif
 
 	// Mantissa
 	const __m256d mMask = _mm256_castsi256_pd(_mm256_set1_epi64x(0x000FFFFFFFFFFFFFULL));
@@ -144,16 +148,19 @@ __m256d log_avx(__m256d x){
 
 __m256d exp_avx(__m256d x){
 
+    // look at resources/WAPCO_3_5.pdf
+
     const __m256d log2_e = setPD(1.4426950408889634); // log2(e)
     const __m256d A      = setPD(1LL << 52);         // 2^52, the shift factor
     const __m256d B      = setPD(1023.0);            // IEEE 754 bias
-    const __m256d one    = setPD(1);
+    // const __m256d one    = setPD(1);
     // x = x * log2(e)
     x = _mm256_mul_pd(x, log2_e);
     __m256d x_i = _mm256_floor_pd(x);
     __m256d xf = _mm256_sub_pd(x, x_i);
 
     // Your coefficients for K_n(xf) = 1 + xf - 2^xf
+    // coefficient calculated using remez.py mentioned
     const __m256d p0 = setPD(8.96880707e-9);
     const __m256d p1 = setPD(3.06852825e-1);
     const __m256d p2 = setPD(-2.40226805e-1);
@@ -174,30 +181,32 @@ __m256d exp_avx(__m256d x){
     poly = _mm256_fmadd_pd(poly, xf, p0);
 
     //x = x - K_n(xf)
-
     x = _mm256_sub_pd(x, poly);
 
     // now we have out answer hidden in x, the exponent part is xi and fractional part is xf (our mantissa)
-    
     __m256d i_double = _mm256_fmadd_pd(A, x, _mm256_mul_pd(A, B));
+    #ifdef __AVX512DQ__
     // // avx-512 method
     __m256i i_long = _mm256_cvtpd_epi64(i_double);
-
+    #else
     //  step by step conversion
-    // alignas(32) double temp_d[4];
-    // alignas(32) long long temp_ll[4];
-    // _mm256_store_pd(temp_d, i_double);
-    // for(int i = 0; i < 4; ++i) {
-    //     temp_ll[i] = (long long)temp_d[i];
-    // }
-    // __m256i i_long = _mm256_load_si256((__m256i*)temp_ll);
+    alignas(32) double temp_d[4];
+    alignas(32) long long temp_ll[4];
+    _mm256_store_pd(temp_d, i_double);
+    for(int i = 0; i < 4; ++i) {
+        temp_ll[i] = (long long)temp_d[i];
+    }
+    __m256i i_long = _mm256_load_si256((__m256i*)temp_ll);
+    #endif
 
     __m256d result = _mm256_castsi256_pd(i_long);
-
     return result;
 }
 
 __m256d erfc_avx(__m256d x){
+
+    // look at resources/Abramowitz
+
     __m256d zero = setPD(0);
     __m256d two = setPD(2);
     __m256d mask = _mm256_cmp_pd(x, zero, _CMP_GT_OQ);
