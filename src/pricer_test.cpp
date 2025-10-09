@@ -76,7 +76,7 @@ int main() {
     std::cout << "Max relative difference between scalar and vector pricers: " << max_relative_diff << std::endl;
     std::cout << "Scalar pricer execution time: " << scalar.duration_ms << " ms" << std::endl;
     std::cout << "Vector pricer execution time: " << vector.duration_ms << " ms" << std::endl;
-    std::cout << "Time difference (scalar - vector): " << scalar.duration_ms  / vector.duration_ms << " times improvement" << std::endl;
+    std::cout << "Improvement : " << scalar.duration_ms  / vector.duration_ms << " times improvement" << std::endl;
 
     return 0;
 }

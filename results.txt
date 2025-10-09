@@ -1,0 +1,6 @@
+Data size: 10000000
+Max difference between scalar and vector pricers: 2.29746e-05
+Max relative difference between scalar and vector pricers: 0.0446843
+Scalar pricer execution time: 409.26 ms
+Vector pricer execution time: 119.36 ms
+Time difference (scalar - vector): 3.42878 times improvement
